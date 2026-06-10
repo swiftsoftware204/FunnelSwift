@@ -55,7 +55,7 @@ CREATE POLICY "Tenants can manage own integrations"
   USING (tenant_id = current_setting('app.current_tenant')::UUID)
   WITH CHECK (tenant_id = current_setting('app.current_tenant')::UUID);
 
--- Super admin can see all
+-- Super admin can see all (for management)
 CREATE POLICY "Super admin can view all integrations"
   ON tenant_integrations
   FOR ALL
@@ -64,6 +64,23 @@ CREATE POLICY "Super admin can view all integrations"
       SELECT 1 FROM user_profiles
       WHERE id = auth.uid() AND is_superadmin = true
     )
+  );
+
+-- Super admin can also create their own integrations (as a tenant)
+CREATE POLICY "Super admin can create own integrations"
+  ON tenant_integrations
+  FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE id = auth.uid() AND is_superadmin = true
+    ) OR tenant_id = current_setting('app.current_tenant')::UUID
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_profiles
+      WHERE id = auth.uid() AND is_superadmin = true
+    ) OR tenant_id = current_setting('app.current_tenant')::UUID
   );
 
 -- ============================================
