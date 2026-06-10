@@ -15,8 +15,12 @@ interface CommissionSetting {
   software_name: string;
   system_tag: string;
   commission_type: 'percentage' | 'flat';
-  commission_amount: number;
+  commission_demo: number;
+  commission_starter: number;
+  commission_pro: number;
+  commission_enterprise: number;
   pricing_range: string;
+  sales_page_url: string;
   is_active: boolean;
 }
 
@@ -46,10 +50,12 @@ export default function CommissionSystemPage() {
         software_name: tag.target_software,
         system_tag: tag.tag_name,
         commission_type: tag.commission_type,
-        commission_amount: tag.commission_amount,
-        pricing_range: tag.target_software === 'adaswift' ? '$29-$199/mo' :
-                       tag.target_software === 'missedcall' ? '$49-$299/mo' :
-                       tag.target_software === 'workflowswift' ? '$39-$249/mo' : 'Varies',
+        commission_demo: tag.commission_demo || 20,
+        commission_starter: tag.commission_starter || 25,
+        commission_pro: tag.commission_pro || 30,
+        commission_enterprise: tag.commission_enterprise || 35,
+        pricing_range: tag.pricing_range || 'Contact for pricing',
+        sales_page_url: tag.sales_page_url || '',
         is_active: tag.is_active,
       }));
 
@@ -152,47 +158,70 @@ export default function CommissionSystemPage() {
                 </div>
 
                 {editing === setting.id ? (
-                  <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                      <label className="text-xs text-[#64748B] mb-1 block">Type</label>
-                      <Select
-                        value={setting.commission_type}
-                        onValueChange={(value) => updateCommission(setting.id, { commission_type: value as 'percentage' | 'flat' })}
-                      >
-                        <SelectTrigger className="bg-[#16181D] border-[#2A2D38]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="flat">Flat Rate</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-xs text-[#64748B] mb-1 block">Demo %</label>
+                        <Input
+                          type="number"
+                          value={setting.commission_demo}
+                          onChange={(e) => updateCommission(setting.id, { commission_demo: parseFloat(e.target.value) })}
+                          className="bg-[#16181D] border-[#2A2D38]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#64748B] mb-1 block">Starter %</label>
+                        <Input
+                          type="number"
+                          value={setting.commission_starter}
+                          onChange={(e) => updateCommission(setting.id, { commission_starter: parseFloat(e.target.value) })}
+                          className="bg-[#16181D] border-[#2A2D38]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#64748B] mb-1 block">Pro %</label>
+                        <Input
+                          type="number"
+                          value={setting.commission_pro}
+                          onChange={(e) => updateCommission(setting.id, { commission_pro: parseFloat(e.target.value) })}
+                          className="bg-[#16181D] border-[#2A2D38]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#64748B] mb-1 block">Enterprise %</label>
+                        <Input
+                          type="number"
+                          value={setting.commission_enterprise}
+                          onChange={(e) => updateCommission(setting.id, { commission_enterprise: parseFloat(e.target.value) })}
+                          className="bg-[#16181D] border-[#2A2D38]"
+                        />
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-[#64748B] mb-1 block">Amount</label>
+                    <div className="flex gap-2">
                       <Input
-                        type="number"
-                        value={setting.commission_amount}
-                        onChange={(e) => updateCommission(setting.id, { commission_amount: parseFloat(e.target.value) })}
-                        className="bg-[#16181D] border-[#2A2D38]"
+                        placeholder="Sales Page URL"
+                        value={setting.sales_page_url}
+                        onChange={(e) => updateCommission(setting.id, { sales_page_url: e.target.value })}
+                        className="bg-[#16181D] border-[#2A2D38] flex-1"
                       />
+                      <Button
+                        size="sm"
+                        className="bg-[#5B4FFF] hover:bg-[#5B4FFF]/90"
+                        onClick={() => setEditing(null)}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      className="bg-[#5B4FFF] hover:bg-[#5B4FFF]/90"
-                      onClick={() => setEditing(null)}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-[#64748B]">Commission</p>
-                      <p className="text-lg font-bold text-[#F1F5F9]">
-                        {setting.commission_type === 'percentage' 
-                          ? `${setting.commission_amount}%` 
-                          : `$${setting.commission_amount}`}
+                      <p className="text-sm text-[#64748B]">Commissions by Plan</p>
+                      <p className="text-sm text-[#F1F5F9]">
+                        Demo: {setting.commission_demo}% | 
+                        Starter: {setting.commission_starter}% | 
+                        Pro: {setting.commission_pro}% | 
+                        Enterprise: {setting.commission_enterprise}%
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -213,7 +242,7 @@ export default function CommissionSystemPage() {
                       </Button>
                     </div>
                   </div>
-                )}
+                )
               </div>
             ))}
           </div>

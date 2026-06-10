@@ -47,20 +47,37 @@ export default function AffiliateMarketplacePage() {
 
       if (error) throw error;
 
-      const formattedOffers: CommissionOffer[] = (data || []).map(tag => ({
-        id: tag.id,
-        software_name: tag.target_software === 'adaswift' ? 'ADASwift' : 
-                       tag.target_software === 'missedcall' ? 'MissedCall Responder' :
-                       tag.target_software === 'workflowswift' ? 'WorkflowSwift' : tag.target_software,
-        software_icon: tag.icon || '🎯',
-        description: tag.description,
-        system_tag: tag.tag_name,
-        commission_type: tag.commission_type,
-        commission_amount: tag.commission_amount,
-        pricing: tag.pricing_range || 'Contact for pricing',
-        sales_page_url: tag.sales_page_url || '#',
-        is_active: tag.is_active,
-      }));
+      // Get user's plan to show correct commission
+      const { data: userPlan } = await supabase
+        .from('user_profiles')
+        .select('plan_slug')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+      
+      const planSlug = userPlan?.plan_slug || 'demo';
+      
+      const formattedOffers: CommissionOffer[] = (data || []).map(tag => {
+        // Get commission based on user's plan
+        let commissionAmount = tag.commission_demo; // Default 20%
+        if (planSlug === 'starter') commissionAmount = tag.commission_starter;
+        else if (planSlug === 'professional') commissionAmount = tag.commission_pro;
+        else if (planSlug === 'enterprise') commissionAmount = tag.commission_enterprise;
+        
+        return {
+          id: tag.id,
+          software_name: tag.target_software === 'adaswift' ? 'ADASwift' : 
+                         tag.target_software === 'missedcall' ? 'MissedCall Responder' :
+                         tag.target_software === 'workflowswift' ? 'WorkflowSwift' : tag.target_software,
+          software_icon: tag.icon || '🎯',
+          description: tag.description,
+          system_tag: tag.tag_name,
+          commission_type: tag.commission_type,
+          commission_amount: commissionAmount,
+          pricing: tag.pricing_range || 'Contact for pricing',
+          sales_page_url: tag.sales_page_url || '#',
+          is_active: tag.is_active,
+        };
+      });
 
       setOffers(formattedOffers);
     } catch (error) {
@@ -119,30 +136,36 @@ export default function AffiliateMarketplacePage() {
         )}
       </div>
 
-      {/* Commission Tiers */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Commission Tiers by Plan */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/30">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-[#F1F5F9]">20%</p>
+            <p className="text-xs text-[#94A3B8]">Demo/Free</p>
+          </CardContent>
+        </Card>
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
-          <CardContent className="p-6 text-center">
-            <DollarSign className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-[#F1F5F9]">30%</p>
-            <p className="text-sm text-[#94A3B8]">Standard Commission</p>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-[#F1F5F9]">25%</p>
+            <p className="text-xs text-[#94A3B8]">Starter</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/30">
-          <CardContent className="p-6 text-center">
-            <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-[#F1F5F9]">50%</p>
-            <p className="text-sm text-[#94A3B8]">Closed-Won Bonus</p>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-[#F1F5F9]">30%</p>
+            <p className="text-xs text-[#94A3B8]">Professional</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/30">
-          <CardContent className="p-6 text-center">
-            <Gift className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-[#F1F5F9]">Recurring</p>
-            <p className="text-sm text-[#94A3B8]">Monthly Payouts</p>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-[#F1F5F9]">35%</p>
+            <p className="text-xs text-[#94A3B8]">Enterprise</p>
           </CardContent>
         </Card>
       </div>
+      <p className="text-center text-sm text-[#64748B]">
+        Upgrade your plan to earn higher commissions
+      </p>
 
       {/* Commission Offers */}
       <div>

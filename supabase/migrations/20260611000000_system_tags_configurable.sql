@@ -24,7 +24,12 @@ CREATE TABLE system_tags (
   -- For affiliate tracking
   is_commissionable BOOLEAN DEFAULT true,
   commission_type TEXT DEFAULT 'percentage', -- percentage, flat
-  commission_amount DECIMAL(10,2) DEFAULT 30.00,
+  
+  -- Commission by plan tier (Super Admin adjustable)
+  commission_demo DECIMAL(10,2) DEFAULT 20.00,    -- Free/Demo users
+  commission_starter DECIMAL(10,2) DEFAULT 25.00, -- Starter plan
+  commission_pro DECIMAL(10,2) DEFAULT 30.00,     -- Professional plan
+  commission_enterprise DECIMAL(10,2) DEFAULT 35.00, -- Enterprise plan
   
   -- For marketplace display
   pricing_range TEXT, -- '$29-$199/mo' or 'Contact for pricing'
