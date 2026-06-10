@@ -39,6 +39,12 @@ const defaultPages = [
     description: 'FTC affiliate disclosure requirements',
   },
   {
+    slug: 'earnings-disclaimer',
+    title: 'Earnings Disclaimer',
+    icon: DollarSign,
+    description: 'Income and results disclaimer',
+  },
+  {
     slug: 'cookie-policy',
     title: 'Cookie Policy',
     icon: Globe,
@@ -204,6 +210,30 @@ You can manage cookie preferences in your browser settings.
 ## Contact
 
 Questions about cookies? Contact [your email].`,
+
+      'earnings-disclaimer': `# Earnings Disclaimer
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## Individual Results May Vary
+
+The income statements, testimonials, and examples on this website are not intended to represent or guarantee that anyone will achieve the same or similar results.
+
+## No Guarantee of Income
+
+There is no assurance that examples of past earnings can be duplicated in the future. We cannot guarantee your future results and/or success.
+
+## Your Responsibility
+
+Success with our affiliate program depends on many factors including but not limited to your background, effort, and market conditions.
+
+## Forward-Looking Statements
+
+Any forward-looking statements outlined on our website are simply our opinions and thus are not guarantees or promises for actual performance.
+
+## SwiftSoftware Products
+
+This disclaimer applies to all SwiftSoftware products, services, and affiliate offers promoted through our platform.`,
 
       'refund-policy': `# Refund Policy
 
