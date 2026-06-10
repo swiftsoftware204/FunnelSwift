@@ -3,26 +3,44 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { dispatchEvent } from '@/lib/api/webhook';
 import crypto from 'crypto';
 
+// Telnyx webhook verification using public key
+async function verifyTelnyxSignature(
+  payload: string,
+  signature: string,
+  timestamp: string,
+  publicKey: string
+): Promise<boolean> {
+  try {
+    const signedPayload = timestamp + '|' + payload;
+    const signatureBuffer = Buffer.from(signature, 'base64');
+    
+    return crypto.verify(
+      'sha256',
+      Buffer.from(signedPayload),
+      publicKey,
+      signatureBuffer
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
     const signature = req.headers.get('x-telnyx-signature') || '';
     const timestamp = req.headers.get('x-telnyx-timestamp') || '';
     
-    // Verify webhook signature
-    const secret = process.env.TELNYX_WEBHOOK_SECRET;
-    if (!secret) {
-      console.error('TELNYX_WEBHOOK_SECRET not configured');
-      return new Response('Webhook secret not configured', { status: 500 });
+    // Verify webhook signature using public key
+    const publicKey = process.env.TELNYX_PUBLIC_KEY;
+    if (!publicKey) {
+      console.error('TELNYX_PUBLIC_KEY not configured');
+      return new Response('Webhook public key not configured', { status: 500 });
     }
     
-    const signedPayload = timestamp + '|' + body;
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(signedPayload)
-      .digest('base64');
+    const isValid = await verifyTelnyxSignature(body, signature, timestamp, publicKey);
     
-    if (signature !== expectedSignature) {
+    if (!isValid) {
       console.error('Invalid Telnyx signature');
       return new Response('Invalid signature', { status: 403 });
     }
