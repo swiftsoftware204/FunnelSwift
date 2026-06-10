@@ -47,6 +47,8 @@ INSERT INTO system_tags (tag_name, display_name, description, target_software, t
 ('closed-won', 'Closed Won', 'Deal closed successfully', 'internal', 'mark_won', 'green', '💰', 50.00),
 ('closed-lost', 'Closed Lost', 'Deal lost', 'internal', 'mark_lost', 'gray', '❌', 0);
 
+-- Note: Super Admin can add more tags anytime via Settings → System Tags
+
 -- Enable RLS
 ALTER TABLE system_tags ENABLE ROW LEVEL SECURITY;
 
