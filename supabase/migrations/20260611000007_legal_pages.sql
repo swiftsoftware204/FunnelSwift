@@ -44,7 +44,9 @@ INSERT INTO legal_pages (slug, title, content, is_published) VALUES
 
 ('cookie-policy', 'Cookie Policy', E'# Cookie Policy\n\nLast Updated: ' || CURRENT_DATE || E'\n\n## What Are Cookies\n\nCookies are small text files stored on your device.\n\n## How We Use Cookies\n\n- Essential cookies: Required for site functionality\n- Analytics cookies: Help us improve our service\n\n## Your Choices\n\nYou can manage cookie preferences in your browser settings.', false),
 
-('refund-policy', 'Refund Policy', E'# Refund Policy\n\nLast Updated: ' || CURRENT_DATE || E'\n\n## Subscription Refunds\n\n[Add your refund policy here]\n\n## How to Request a Refund\n\nContact support within the refund period.', false)
+('refund-policy', 'Refund Policy', E'# Refund Policy\n\nLast Updated: ' || CURRENT_DATE || E'\n\n## Subscription Refunds\n\n[Add your refund policy here]\n\n## How to Request a Refund\n\nContact support within the refund period.', false),
+
+('earnings-disclaimer', 'Earnings Disclaimer', E'# Earnings Disclaimer\n\nLast Updated: ' || CURRENT_DATE || E'\n\n## Individual Results May Vary\n\nThe income statements, testimonials, and examples on this website are not intended to represent or guarantee that anyone will achieve the same or similar results.\n\n## No Guarantee of Income\n\nThere is no assurance that examples of past earnings can be duplicated in the future. We cannot guarantee your future results and/or success.\n\n## Your Responsibility\n\nSuccess with our affiliate program depends on many factors including but not limited to your background, effort, and market conditions.\n\n## Forward-Looking Statements\n\nAny forward-looking statements outlined on our website are simply our opinions and thus are not guarantees or promises for actual performance.', false)
 
 ON CONFLICT (slug) DO NOTHING;
 

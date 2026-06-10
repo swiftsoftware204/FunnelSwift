@@ -7,14 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { DollarSign, CheckCircle, ArrowRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
 
 export default function AffiliateApplyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [payoutEmail, setPayoutEmail] = useState('');
+  const [agreedToDisclosure, setAgreedToDisclosure] = useState(false);
+  const [agreedToEarningsDisclaimer, setAgreedToEarningsDisclaimer] = useState(false);
   const supabase = createClient();
 
   async function handleApply() {
+    if (!agreedToDisclosure) {
+      toast.error('You must agree to the Affiliate Disclosure');
+      return;
+    }
+    if (!agreedToEarningsDisclaimer) {
+      toast.error('You must agree to the Earnings Disclaimer');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -113,10 +125,51 @@ export default function AffiliateApplyPage() {
             </p>
           </div>
 
+          {/* Legal Acknowledgments */}
+          <div className="space-y-4 pt-4 border-t border-[#2A2D38]">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="disclosure"
+                checked={agreedToDisclosure}
+                onCheckedChange={(checked) => setAgreedToDisclosure(checked as boolean)}
+              />
+              <div className="text-sm">
+                <label htmlFor="disclosure" className="text-[#F1F5F9] cursor-pointer">
+                  I have read and agree to the{' '}
+                  <Link href="/legal/affiliate-disclosure" target="_blank" className="text-[#5B4FFF] hover:underline">
+                    Affiliate Disclosure
+                  </Link>
+                </label>
+                <p className="text-xs text-[#64748B] mt-1">
+                  I understand that I must disclose my affiliate relationship when promoting products.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="earnings"
+                checked={agreedToEarningsDisclaimer}
+                onCheckedChange={(checked) => setAgreedToEarningsDisclaimer(checked as boolean)}
+              />
+              <div className="text-sm">
+                <label htmlFor="earnings" className="text-[#F1F5F9] cursor-pointer">
+                  I have read and agree to the{' '}
+                  <Link href="/legal/earnings-disclaimer" target="_blank" className="text-[#5B4FFF] hover:underline">
+                    Earnings Disclaimer
+                  </Link>
+                </label>
+                <p className="text-xs text-[#64748B] mt-1">
+                  I understand that individual results may vary and there is no guarantee of income.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Button
             className="w-full bg-[#5B4FFF] hover:bg-[#5B4FFF]/90"
             onClick={handleApply}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !agreedToDisclosure || !agreedToEarningsDisclaimer}
           >
             {isSubmitting ? 'Submitting...' : 'Apply Now'}
             <ArrowRight className="h-4 w-4 ml-2" />
