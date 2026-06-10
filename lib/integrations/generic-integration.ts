@@ -302,13 +302,6 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
         placeholder: 'Enter your Sendiio API key',
         required: true,
       },
-      {
-        key: 'api_secret',
-        label: 'Sendiio API Secret',
-        type: 'password',
-        placeholder: 'Enter your Sendiio API secret',
-        required: true,
-      },
     ],
     optionalSettings: [
       {
@@ -793,7 +786,6 @@ export class IntegrationManager {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': creds.api_key,
-        'X-API-SECRET': creds.api_secret,
       },
       body: JSON.stringify({
         email: contact.email,
