@@ -6,16 +6,16 @@ import { Toaster } from '@/components/ui/sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SwiftImpact Lead Capture',
-  description: 'Mobile-first Lead Capture BOS for SwiftImpact Solutions',
+  title: 'FunnelSwift - Lead Management System',
+  description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
   openGraph: {
-    title: 'SwiftImpact Lead Capture',
-    description: 'Mobile-first Lead Capture BOS for SwiftImpact Solutions',
+    title: 'FunnelSwift - Lead Management System',
+    description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SwiftImpact Lead Capture',
-    description: 'Mobile-first Lead Capture BOS for SwiftImpact Solutions',
+    title: 'FunnelSwift - Lead Management System',
+    description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
   },
 };
 
