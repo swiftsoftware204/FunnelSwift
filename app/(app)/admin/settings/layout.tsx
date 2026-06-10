@@ -10,7 +10,8 @@ import {
   Shield,
   DollarSign,
   Users,
-  Footer
+  Footer,
+  Users2
 } from 'lucide-react';
 
 const settingsNav = [
@@ -55,6 +56,12 @@ const settingsNav = [
     href: '/admin/settings/plans',
     icon: Users,
     description: 'Subscription plans, limits'
+  },
+  {
+    title: 'Team',
+    href: '/admin/settings/team',
+    icon: Users2,
+    description: 'Team members, roles, permissions'
   },
 ];
 
