@@ -26,6 +26,10 @@ CREATE TABLE system_tags (
   commission_type TEXT DEFAULT 'percentage', -- percentage, flat
   commission_amount DECIMAL(10,2) DEFAULT 30.00,
   
+  -- For marketplace display
+  pricing_range TEXT, -- '$29-$199/mo' or 'Contact for pricing'
+  sales_page_url TEXT, -- Link to sales page
+  
   -- Metadata
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now(),

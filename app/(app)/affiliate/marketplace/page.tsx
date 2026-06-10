@@ -18,6 +18,7 @@ interface CommissionOffer {
   commission_type: 'percentage' | 'flat';
   commission_amount: number;
   pricing: string;
+  sales_page_url: string;
   is_active: boolean;
 }
 
@@ -56,9 +57,8 @@ export default function AffiliateMarketplacePage() {
         system_tag: tag.tag_name,
         commission_type: tag.commission_type,
         commission_amount: tag.commission_amount,
-        pricing: tag.target_software === 'adaswift' ? '$29-$199/mo' :
-                 tag.target_software === 'missedcall' ? '$49-$299/mo' :
-                 tag.target_software === 'workflowswift' ? '$39-$249/mo' : 'Varies',
+        pricing: tag.pricing_range || 'Contact for pricing',
+        sales_page_url: tag.sales_page_url || '#',
         is_active: tag.is_active,
       }));
 
@@ -168,28 +168,25 @@ export default function AffiliateMarketplacePage() {
 
                 <p className="text-[#94A3B8] mb-4">{offer.description}</p>
 
-                <div className="bg-[#0E0F12] p-3 rounded-lg border border-[#2A2D38]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-[#5B4FFF]" />
-                      <code className="text-sm text-[#F1F5F9]">{offer.system_tag}</code>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-[#5B4FFF] hover:text-[#5B4FFF]/80"
-                      onClick={() => copyTag(offer.system_tag)}
-                    >
-                      {copiedTag === offer.system_tag ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-[#64748B] mt-1">
-                    Use this tag when creating leads
-                  </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-[#2A2D38]"
+                    onClick={() => copyTag(offer.system_tag)}
+                  >
+                    {copiedTag === offer.system_tag ? (
+                      <><Check className="h-4 w-4 mr-2" /> Copied</>
+                    ) : (
+                      <><Tag className="h-4 w-4 mr-2" /> {offer.system_tag}</>
+                    )}
+                  </Button>
+                  <Button
+                    className="flex-1 bg-[#5B4FFF] hover:bg-[#5B4FFF]/90"
+                    onClick={() => window.open(offer.sales_page_url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    See Offer
+                  </Button>
                 </div>
               </CardContent>
             </Card>
