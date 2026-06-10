@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,24 +10,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const supabase = createClient();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push('/dashboard');
-      router.refresh();
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'An unexpected error occurred');
     }
   }
 
