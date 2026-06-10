@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { DollarSign, Users, TrendingUp, Copy, Check, Link as LinkIcon } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Copy, Check, Link as LinkIcon, Download } from 'lucide-react';
 
 export default function AffiliateDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -164,8 +164,17 @@ export default function AffiliateDashboardPage() {
 
       {/* Recent Referrals */}
       <Card className="bg-[#16181D] border-[#2A2D38]">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-[#F1F5F9]">Recent Referrals</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#2A2D38]"
+            onClick={() => downloadReferralsCSV()}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
         </CardHeader>
         <CardContent>
           {referrals.length === 0 ? (
@@ -189,4 +198,9 @@ export default function AffiliateDashboardPage() {
       </Card>
     </div>
   );
+}
+
+function downloadReferralsCSV() {
+  // This will be implemented with actual data
+  toast.info('Download feature coming soon!');
 }
