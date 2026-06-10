@@ -5,6 +5,12 @@ publish = ".next"
 [[plugins]]
 package = "@netlify/plugin-nextjs"
 
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+force = false
+
 [[headers]]
 for = "/*"
 [headers.values]
