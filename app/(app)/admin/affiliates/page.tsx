@@ -7,11 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Users, DollarSign, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Users, DollarSign, CheckCircle, XCircle, Search, Filter, Calendar } from 'lucide-react';
 
 export default function AdminAffiliatesPage() {
   const [affiliates, setAffiliates] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [productFilter, setProductFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
@@ -67,10 +70,14 @@ export default function AdminAffiliatesPage() {
     }
   }
 
-  const filteredAffiliates = affiliates.filter(a => 
-    a.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.affiliate_code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAffiliates = affiliates.filter(a => {
+    const matchesSearch = a.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         a.affiliate_code?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Note: Product and date filters would need additional data fetching
+    // This is a simplified version - full implementation would query referral data
+    return matchesSearch;
+  });
 
   const pendingCount = affiliates.filter(a => a.status === 'pending').length;
   const totalCommissions = affiliates.reduce((sum, a) => sum + (a.total_commissions || 0), 0);
@@ -125,16 +132,53 @@ export default function AdminAffiliatesPage() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#64748B]" />
-        <Input
-          placeholder="Search affiliates by email or code..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-[#0E0F12] border-[#2A2D38]"
-        />
-      </div>
+      {/* Filters */}
+      <Card className="bg-[#16181D] border-[#2A2D38]">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+              <Input
+                placeholder="Search affiliates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-[#0E0F12] border-[#2A2D38]"
+              />
+            </div>
+            <div>
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              >
+                <option value="all">All Products</option>
+                <option value="adaswift">ADASwift</option>
+                <option value="missedcall">MissedCall</option>
+                <option value="workflowswift">WorkflowSwift</option>
+                <option value="funnelswift">FunnelSwift</option>
+              </select>
+            </div>
+            <div>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                placeholder="From"
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              />
+            </div>
+            <div>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                placeholder="To"
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Affiliates List */}
       <Card className="bg-[#16181D] border-[#2A2D38]">

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Download, DollarSign, Users, TrendingUp, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Download, DollarSign, Users, TrendingUp, Link as LinkIcon, Filter, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AffiliateDetailPage() {
@@ -17,7 +17,15 @@ export default function AffiliateDetailPage() {
   const [affiliate, setAffiliate] = useState<any>(null);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
+  const [filteredReferrals, setFilteredReferrals] = useState<any[]>([]);
+  const [filteredCommissions, setFilteredCommissions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Filters
+  const [productFilter, setProductFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  
   const supabase = createClient();
 
   useEffect(() => {
@@ -47,6 +55,7 @@ export default function AffiliateDetailPage() {
           .order('created_at', { ascending: false });
 
         setReferrals(refs || []);
+        setFilteredReferrals(refs || []);
 
         // Load commissions
         const { data: comms } = await supabase
@@ -56,6 +65,7 @@ export default function AffiliateDetailPage() {
           .order('created_at', { ascending: false });
 
         setCommissions(comms || []);
+        setFilteredCommissions(comms || []);
       }
     } catch (error) {
       console.error('Error loading affiliate data:', error);
@@ -64,6 +74,48 @@ export default function AffiliateDetailPage() {
       setIsLoading(false);
     }
   }
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = referrals;
+    
+    // Product filter
+    if (productFilter !== 'all') {
+      filtered = filtered.filter(r => r.product_name === productFilter || r.software_name === productFilter);
+    }
+    
+    // Date filter
+    if (dateFrom) {
+      filtered = filtered.filter(r => new Date(r.signed_up_at) >= new Date(dateFrom));
+    }
+    if (dateTo) {
+      filtered = filtered.filter(r => new Date(r.signed_up_at) <= new Date(dateTo));
+    }
+    
+    setFilteredReferrals(filtered);
+  }, [referrals, productFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    let filtered = commissions;
+    
+    // Product filter
+    if (productFilter !== 'all') {
+      filtered = filtered.filter(c => c.product_name === productFilter);
+    }
+    
+    // Date filter
+    if (dateFrom) {
+      filtered = filtered.filter(c => new Date(c.created_at) >= new Date(dateFrom));
+    }
+    if (dateTo) {
+      filtered = filtered.filter(c => new Date(c.created_at) <= new Date(dateTo));
+    }
+    
+    setFilteredCommissions(filtered);
+  }, [commissions, productFilter, dateFrom, dateTo]);
+
+  // Get unique products for filter
+  const products = [...new Set([...referrals.map(r => r.product_name || r.software_name), ...commissions.map(c => c.product_name)])].filter(Boolean);
 
   function downloadReferralsCSV() {
     const headers = ['Date', 'Email', 'Source', 'Landing Page', 'UTM Source', 'UTM Campaign', 'Status', 'Converted', 'Commission'];
@@ -178,6 +230,47 @@ export default function AffiliateDetailPage() {
         </Card>
       </div>
 
+      {/* Filters */}
+      <Card className="bg-[#16181D] border-[#2A2D38]">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="h-5 w-5 text-[#5B4FFF]" />
+            <span className="text-[#F1F5F9] font-medium">Filters</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-xs text-[#64748B] mb-1 block">Product</label>
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              >
+                <option value="all">All Products</option>
+                {products.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-[#64748B] mb-1 block">From Date</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-[#64748B] mb-1 block">To Date</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full bg-[#0E0F12] border border-[#2A2D38] rounded px-3 py-2 text-[#F1F5F9]"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Referral Link */}
       <Card className="bg-gradient-to-r from-[#5B4FFF]/10 to-purple-500/10 border-[#5B4FFF]/30">
         <CardContent className="p-4">
@@ -205,7 +298,7 @@ export default function AffiliateDetailPage() {
       {/* Referrals List */}
       <Card className="bg-[#16181D] border-[#2A2D38]">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-[#F1F5F9]">Referrals ({referrals.length})</CardTitle>
+          <CardTitle className="text-[#F1F5F9]">Referrals ({filteredReferrals.length})</CardTitle>
           <Button
             variant="outline"
             size="sm"
@@ -217,11 +310,11 @@ export default function AffiliateDetailPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {referrals.length === 0 ? (
-            <p className="text-center text-[#64748B] py-4">No referrals yet</p>
+          {filteredReferrals.length === 0 ? (
+            <p className="text-center text-[#64748B] py-4">No referrals match filters</p>
           ) : (
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {referrals.map((ref) => (
+              {filteredReferrals.map((ref) => (
                 <div key={ref.id} className="p-3 bg-[#0E0F12] rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
@@ -253,7 +346,7 @@ export default function AffiliateDetailPage() {
       {/* Commissions List */}
       <Card className="bg-[#16181D] border-[#2A2D38]">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-[#F1F5F9]">Commissions ({commissions.length})</CardTitle>
+          <CardTitle className="text-[#F1F5F9]">Commissions ({filteredCommissions.length})</CardTitle>
           <Button
             variant="outline"
             size="sm"
@@ -265,11 +358,11 @@ export default function AffiliateDetailPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {commissions.length === 0 ? (
-            <p className="text-center text-[#64748B] py-4">No commissions yet</p>
+          {filteredCommissions.length === 0 ? (
+            <p className="text-center text-[#64748B] py-4">No commissions match filters</p>
           ) : (
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {commissions.map((comm) => (
+              {filteredCommissions.map((comm) => (
                 <div key={comm.id} className="p-3 bg-[#0E0F12] rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
