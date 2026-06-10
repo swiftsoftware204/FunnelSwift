@@ -289,6 +289,43 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   
   // Email Marketing
   {
+    id: 'sendiio',
+    name: 'Sendiio',
+    category: 'email',
+    description: 'Add contacts to Sendiio lists (your primary platform)',
+    icon: '📧',
+    requiredCredentials: [
+      {
+        key: 'api_key',
+        label: 'Sendiio API Key',
+        type: 'password',
+        placeholder: 'Enter your Sendiio API key',
+        required: true,
+      },
+      {
+        key: 'api_secret',
+        label: 'Sendiio API Secret',
+        type: 'password',
+        placeholder: 'Enter your Sendiio API secret',
+        required: true,
+      },
+    ],
+    optionalSettings: [
+      {
+        key: 'default_list_id',
+        label: 'Default List ID',
+        type: 'text',
+        placeholder: 'List ID for new contacts',
+      },
+      {
+        key: 'tag_sync',
+        label: 'Sync Tags to Sendiio',
+        type: 'checkbox',
+        defaultValue: true,
+      },
+    ],
+  },
+  {
     id: 'mailchimp',
     name: 'Mailchimp',
     category: 'email',
@@ -703,6 +740,134 @@ export class IntegrationManager {
     return response.json();
   }
   
+  // Sync contact tags to email marketing platforms
+  async syncContactToEmailPlatform(
+    tenantId: string,
+    contact: {
+      email: string;
+      first_name?: string;
+      last_name?: string;
+      phone?: string;
+      tags?: string[];
+    }
+  ): Promise<void> {
+    // Get all email marketing integrations for this tenant
+    const { data: integrations } = await this.supabase
+      .from('tenant_integrations')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .in('provider_id', ['sendiio', 'mailchimp', 'activecampaign'])
+      .eq('is_active', true);
+
+    if (!integrations || integrations.length === 0) return;
+
+    // Sync to each platform
+    for (const integration of integrations) {
+      try {
+        const credentials = this.decryptCredentials(integration.credentials);
+        
+        switch (integration.provider_id) {
+          case 'sendiio':
+            await this.syncToSendiio(credentials, contact, integration.settings);
+            break;
+          case 'mailchimp':
+            await this.syncToMailchimp(credentials, contact, integration.settings);
+            break;
+          case 'activecampaign':
+            await this.syncToActiveCampaign(credentials, contact, integration.settings);
+            break;
+        }
+      } catch (error) {
+        console.error(`Failed to sync to ${integration.provider_id}:`, error);
+      }
+    }
+  }
+
+  private async syncToSendiio(
+    creds: Record<string, string>,
+    contact: any,
+    settings: any
+  ): Promise<void> {
+    const response = await fetch('https://sendiio.com/api/v1/subscribers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': creds.api_key,
+        'X-API-SECRET': creds.api_secret,
+      },
+      body: JSON.stringify({
+        email: contact.email,
+        first_name: contact.first_name || '',
+        last_name: contact.last_name || '',
+        phone: contact.phone || '',
+        list_id: settings?.default_list_id,
+        tags: contact.tags || [],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Sendiio sync error: ${response.statusText}`);
+    }
+  }
+
+  private async syncToMailchimp(
+    creds: Record<string, string>,
+    contact: any,
+    settings: any
+  ): Promise<void> {
+    const datacenter = creds.server_prefix;
+    const listId = settings?.default_list_id;
+    
+    const response = await fetch(`https://${datacenter}.api.mailchimp.com/3.0/lists/${listId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${creds.api_key}`,
+      },
+      body: JSON.stringify({
+        email_address: contact.email,
+        status: 'subscribed',
+        merge_fields: {
+          FNAME: contact.first_name || '',
+          LNAME: contact.last_name || '',
+          PHONE: contact.phone || '',
+        },
+        tags: (contact.tags || []).map((tag: string) => ({ name: tag })),
+      }),
+    });
+
+    if (!response.ok && response.status !== 400) { // 400 = already subscribed
+      throw new Error(`Mailchimp sync error: ${response.statusText}`);
+    }
+  }
+
+  private async syncToActiveCampaign(
+    creds: Record<string, string>,
+    contact: any,
+    settings: any
+  ): Promise<void> {
+    const response = await fetch(`${creds.api_url}/api/3/contacts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Api-Token': creds.api_key,
+      },
+      body: JSON.stringify({
+        contact: {
+          email: contact.email,
+          firstName: contact.first_name || '',
+          lastName: contact.last_name || '',
+          phone: contact.phone || '',
+          tags: contact.tags || [],
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`ActiveCampaign sync error: ${response.statusText}`);
+    }
+  }
+
   // Encryption helpers (use proper encryption in production)
   private encryptCredentials(credentials: Record<string, string>): Record<string, string> {
     // TODO: Implement proper encryption
