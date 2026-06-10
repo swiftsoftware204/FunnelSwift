@@ -1,0 +1,372 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { FileText, Save, Eye, Globe, Shield, Users, DollarSign } from 'lucide-react';
+import Link from 'next/link';
+
+interface LegalPage {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  last_updated: string;
+  is_published: boolean;
+}
+
+const defaultPages = [
+  {
+    slug: 'terms-of-service',
+    title: 'Terms of Service',
+    icon: FileText,
+    description: 'User agreement and service terms',
+  },
+  {
+    slug: 'privacy-policy',
+    title: 'Privacy Policy',
+    icon: Shield,
+    description: 'Data collection and privacy practices',
+  },
+  {
+    slug: 'affiliate-disclosure',
+    title: 'Affiliate Disclosure',
+    icon: DollarSign,
+    description: 'FTC affiliate disclosure requirements',
+  },
+  {
+    slug: 'cookie-policy',
+    title: 'Cookie Policy',
+    icon: Globe,
+    description: 'Cookie usage and tracking',
+  },
+  {
+    slug: 'refund-policy',
+    title: 'Refund Policy',
+    icon: Users,
+    description: 'Refund and cancellation terms',
+  },
+];
+
+export default function LegalPagesAdmin() {
+  const [pages, setPages] = useState<LegalPage[]>([]);
+  const [editingPage, setEditingPage] = useState<LegalPage | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    loadPages();
+  }, []);
+
+  async function loadPages() {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('legal_pages')
+        .select('*')
+        .order('title', { ascending: true });
+
+      if (error) throw error;
+
+      // Merge with defaults
+      const mergedPages = defaultPages.map(defaultPage => {
+        const existing = data?.find(p => p.slug === defaultPage.slug);
+        return existing || {
+          id: '',
+          slug: defaultPage.slug,
+          title: defaultPage.title,
+          content: getDefaultContent(defaultPage.slug),
+          last_updated: new Date().toISOString(),
+          is_published: false,
+        };
+      });
+
+      setPages(mergedPages);
+    } catch (error) {
+      console.error('Error loading pages:', error);
+      toast.error('Failed to load legal pages');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function getDefaultContent(slug: string): string {
+    const defaults: Record<string, string> = {
+      'terms-of-service': `# Terms of Service
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## 1. Acceptance of Terms
+
+By accessing and using FunnelSwift, you agree to be bound by these Terms of Service.
+
+## 2. Description of Service
+
+FunnelSwift provides lead capture, CRM, and affiliate marketing tools.
+
+## 3. User Accounts
+
+You must provide accurate information when creating an account.
+
+## 4. Payment Terms
+
+[Add your payment terms here]
+
+## 5. Affiliate Program
+
+[Add affiliate program terms here]
+
+## 6. Limitation of Liability
+
+[Add liability limitations here]
+
+## 7. Contact
+
+For questions about these terms, contact [your email].`,
+
+      'privacy-policy': `# Privacy Policy
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## 1. Information We Collect
+
+We collect information you provide directly to us, including:
+- Name and email address
+- Phone number
+- Business information
+- Payment information
+
+## 2. How We Use Information
+
+We use the information to:
+- Provide our services
+- Process payments
+- Send marketing communications
+- Comply with legal obligations
+
+## 3. Information Sharing
+
+[Add information sharing practices here]
+
+## 4. Your Rights
+
+[Add user rights here]
+
+## 5. Contact Us
+
+For privacy questions, contact [your email].`,
+
+      'affiliate-disclosure': `# Affiliate Disclosure
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## FTC Disclosure
+
+FunnelSwift operates an affiliate program. When you refer customers through our affiliate system, you may earn commissions on qualifying purchases.
+
+## How It Works
+
+- Affiliates earn commissions on referred sales
+- Commission rates vary by product and plan level
+- Payments are made according to our affiliate terms
+
+## Transparency
+
+We believe in transparency. All affiliate relationships are tracked and reported in accordance with FTC guidelines.
+
+## Questions?
+
+Contact us at [your email] for affiliate program inquiries.`,
+
+      'cookie-policy': `# Cookie Policy
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## What Are Cookies
+
+Cookies are small text files stored on your device.
+
+## How We Use Cookies
+
+- Essential cookies: Required for site functionality
+- Analytics cookies: Help us improve our service
+- Marketing cookies: Used for targeted advertising
+
+## Your Choices
+
+You can manage cookie preferences in your browser settings.
+
+## Contact
+
+Questions about cookies? Contact [your email].`,
+
+      'refund-policy': `# Refund Policy
+
+Last Updated: ${new Date().toLocaleDateString()}
+
+## Subscription Refunds
+
+[Add your refund policy here]
+
+## Affiliate Commissions
+
+Affiliate commissions are paid according to the affiliate agreement.
+
+## How to Request a Refund
+
+Contact [your email] within [timeframe] for refund requests.
+
+## Exceptions
+
+[Add any exceptions here]`,
+    };
+
+    return defaults[slug] || `# ${slug.replace(/-/g, ' ').toUpperCase()}\n\n[Add your content here]`;
+  }
+
+  async function savePage() {
+    if (!editingPage) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('legal_pages')
+        .upsert({
+          id: editingPage.id || undefined,
+          slug: editingPage.slug,
+          title: editingPage.title,
+          content: editingPage.content,
+          last_updated: new Date().toISOString(),
+          is_published: true,
+        });
+
+      if (error) throw error;
+
+      toast.success('Page saved successfully!');
+      setEditingPage(null);
+      loadPages();
+    } catch (error) {
+      toast.error('Failed to save page');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-[#64748B]">Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-[#F1F5F9]">Legal Pages</h1>
+      </div>
+
+      {editingPage ? (
+        <Card className="bg-[#16181D] border-[#2A2D38]">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#F1F5F9]">Edit: {editingPage.title}</CardTitle>
+            <div className="flex gap-2">
+              <Link href={`/legal/${editingPage.slug}`} target="_blank">
+                <Button variant="outline" size="sm" className="border-[#2A2D38]">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#2A2D38]"
+                onClick={() => setEditingPage(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm text-[#F1F5F9] mb-1 block">Page Title</label>
+              <Input
+                value={editingPage.title}
+                onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })}
+                className="bg-[#0E0F12] border-[#2A2D38]"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-[#F1F5F9] mb-1 block">Content (Markdown supported)</label>
+              <Textarea
+                value={editingPage.content}
+                onChange={(e) => setEditingPage({ ...editingPage, content: e.target.value })}
+                className="bg-[#0E0F12] border-[#2A2D38] min-h-[500px] font-mono text-sm"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="bg-[#5B4FFF] hover:bg-[#5B4FFF]/90"
+                onClick={savePage}
+                disabled={isSaving}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pages.map((page) => {
+            const defaultInfo = defaultPages.find(p => p.slug === page.slug);
+            const Icon = defaultInfo?.icon || FileText;
+
+            return (
+              <Card
+                key={page.slug}
+                className="bg-[#16181D] border-[#2A2D38] hover:border-[#5B4FFF]/50 transition-colors cursor-pointer"
+                onClick={() => setEditingPage(page)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-[#5B4FFF]/10 rounded-lg">
+                      <Icon className="h-6 w-6 text-[#5B4FFF]" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-[#F1F5F9]">{page.title}</h3>
+                      <p className="text-sm text-[#64748B] mt-1">
+                        {defaultInfo?.description}
+                      </p>
+                      <div className="flex items-center gap-4 mt-3">
+                        <span className="text-xs text-[#64748B]">
+                          Last updated: {new Date(page.last_updated).toLocaleDateString()}
+                        </span>
+                        {page.is_published ? (
+                          <span className="text-xs text-green-400">Published</span>
+                        ) : (
+                          <span className="text-xs text-yellow-400">Draft</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <Card className="bg-[#0E0F12] border-[#2A2D38]">
+        <CardContent className="p-4">
+          <p className="text-sm text-[#94A3B8]">
+            <strong className="text-[#F1F5F9]">Important:</strong> These pages are legally binding. 
+            Consult with a legal professional before publishing. Default templates are provided as 
+            starting points only and should be customized for your specific business needs.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
