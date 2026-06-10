@@ -391,7 +391,7 @@ export default function LeadDetailPage() {
                 <h3 className="font-medium text-[#F1F5F9]">AI Prospecting Message</h3>
               </div>
               <p className="text-sm text-[#94A3B8] leading-relaxed">
-                Hi {lead.first_name || 'there'}, I noticed you're interested in {lead.industry || 'improving your business'}. Let's schedule a quick call to discuss how we can help you achieve your goals.
+                Hi {lead.first_name || 'there'}, I noticed you&apos;re interested in {lead.industry || 'improving your business'}. Let&apos;s schedule a quick call to discuss how we can help you achieve your goals.
               </p>
               <Button className="w-full mt-4 bg-[#5B4FFF] hover:bg-[#5B4FFF]/90">
                 Copy Message
