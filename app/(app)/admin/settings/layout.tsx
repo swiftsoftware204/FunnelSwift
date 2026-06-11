@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   FileText, 
-  Layout, 
+  Layout, LayoutTemplate, 
   Globe, 
   Settings, 
   Shield,
   DollarSign,
   Users,
-  Footer,
+  
   Users2
 } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const settingsNav = [
   {
     title: 'Footer',
     href: '/admin/settings/footer',
-    icon: Footer,
+    icon: LayoutTemplate,
     description: 'Footer links & columns'
   },
   {
