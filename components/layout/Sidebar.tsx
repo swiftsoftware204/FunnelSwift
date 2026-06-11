@@ -95,7 +95,7 @@ export function Sidebar() {
               <Rocket className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-[#F1F5F9]">SwiftImpact</h1>
+              <h1 className="text-lg font-semibold text-[#F1F5F9]">FunnelSwift</h1>
               <p className="text-xs text-[#64748B]">Lead Capture</p>
             </div>
           </div>
@@ -176,7 +176,7 @@ export function Sidebar() {
           {/* Footer */}
           <div className="p-4 border-t border-[#2A2D38]">
             <p className="text-xs text-[#64748B] text-center">
-              © 2026 SwiftImpact
+              © 2026 FunnelSwift
             </p>
           </div>
         </div>
