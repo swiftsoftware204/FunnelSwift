@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/ui.store';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import {
   LayoutDashboard,
   Users,
@@ -17,6 +19,7 @@ import {
   Menu,
   X,
   Rocket,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -35,6 +38,28 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, toggleSidebar } = useUIStore();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    checkAdmin();
+  }, []);
+
+  async function checkAdmin() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('is_superadmin')
+          .eq('id', user.id)
+          .single();
+        setIsAdmin(profile?.is_superadmin || false);
+      }
+    } catch (error) {
+      console.error('Error checking admin:', error);
+    }
+  }
 
   return (
     <>
@@ -101,17 +126,58 @@ export function Sidebar() {
                 </Link>
               );
             })}
+
+            {/* Admin Section - Only for superadmins */}
+            {isAdmin && (
+              <>
+                <div className="pt-4 mt-4 border-t border-[#2A2D38]">
+                  <p className="px-3 text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-2">
+                    Super Admin
+                  </p>
+                  <Link
+                    href="/admin"
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        toggleSidebar();
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                      pathname === '/admin' || pathname.startsWith('/admin/')
+                        ? 'bg-[#5B4FFF]/10 text-[#5B4FFF] border-l-2 border-[#5B4FFF]'
+                        : 'text-[#94A3B8] hover:bg-[#2A2D38] hover:text-[#F1F5F9]'
+                    )}
+                  >
+                    <Shield className="h-5 w-5" />
+                    Admin Dashboard
+                  </Link>
+                  <Link
+                    href="/admin/tenants"
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        toggleSidebar();
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mt-1',
+                      pathname === '/admin/tenants'
+                        ? 'bg-[#5B4FFF]/10 text-[#5B4FFF] border-l-2 border-[#5B4FFF]'
+                        : 'text-[#94A3B8] hover:bg-[#2A2D38] hover:text-[#F1F5F9]'
+                    )}
+                  >
+                    <Users className="h-5 w-5" />
+                    Tenants
+                  </Link>
+                </div>
+              </>
+            )}
           </nav>
 
           {/* Footer */}
-          <div className="px-3 py-4 border-t border-[#2A2D38]">
-            <div className="px-3 py-2 rounded-lg bg-[#0E0F12]">
-              <p className="text-xs text-[#64748B]">API Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm text-[#22C55E]">Operational</span>
-              </div>
-            </div>
+          <div className="p-4 border-t border-[#2A2D38]">
+            <p className="text-xs text-[#64748B] text-center">
+              © 2026 SwiftImpact
+            </p>
           </div>
         </div>
       </aside>
