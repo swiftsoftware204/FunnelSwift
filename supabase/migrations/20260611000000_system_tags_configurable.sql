@@ -38,33 +38,49 @@ CREATE TABLE system_tags (
   -- Metadata
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  
+  -- Hardcoded protection (cannot be deleted if true)
+  is_hardcoded BOOLEAN DEFAULT false
 );
 
--- Insert default system tags (Super Admin can edit/add/remove)
-INSERT INTO system_tags (tag_name, display_name, description, target_software, target_action, color, icon, commission_amount) VALUES
-('ada-lead-magnet', 'ADA Widget Lead Magnet', 'Triggers ADA widget demo creation', 'adaswift', 'create_demo', 'blue', '🎯', 30.00),
-('ada-widget-sent', 'ADA Widget Delivered', 'Widget has been delivered to prospect', 'adaswift', 'mark_delivered', 'green', '✅', 0),
-('missedcall-demo-request', 'MissedCall Demo Request', 'Triggers MissedCall SMS demo', 'missedcall', 'create_demo', 'purple', '📞', 30.00),
-('missedcall-demo-active', 'MissedCall Demo Active', 'Demo account is active', 'missedcall', 'mark_active', 'green', '✅', 0),
-('workflowswift-trial', 'WorkflowSwift Trial', 'Triggers WorkflowSwift trial', 'workflowswift', 'create_trial', 'orange', '⚡', 30.00),
-('workflowswift-active', 'WorkflowSwift Active', 'Trial converted to paid', 'workflowswift', 'mark_converted', 'green', '✅', 0),
-('hot-lead', 'Hot Lead', 'High priority lead for follow-up', 'internal', 'alert_sales', 'red', '🔥', 0),
-('priority-follow-up', 'Priority Follow-Up', 'Requires immediate attention', 'internal', 'create_task', 'yellow', '⚠️', 0),
-('demo-completed', 'Demo Completed', 'Prospect completed demo', 'internal', 'mark_qualified', 'green', '🎉', 0),
-('contract-sent', 'Contract Sent', 'Contract sent for signature', 'internal', 'track_contract', 'blue', '📄', 0),
-('closed-won', 'Closed Won', 'Deal closed successfully', 'internal', 'mark_won', 'green', '💰', 50.00),
-('closed-lost', 'Closed Lost', 'Deal lost', 'internal', 'mark_lost', 'gray', '❌', 0);
+-- Insert default system tags (HARDCODED = cannot be deleted)
+INSERT INTO system_tags (tag_name, display_name, description, target_software, target_action, color, icon, commission_amount, is_hardcoded) VALUES
+('ada-lead-magnet', 'ADA Widget Lead Magnet', 'Triggers ADA widget demo creation', 'adaswift', 'create_demo', 'blue', '🎯', 30.00, true),
+('ada-widget-sent', 'ADA Widget Delivered', 'Widget has been delivered to prospect', 'adaswift', 'mark_delivered', 'green', '✅', 0, true),
+('missedcall-demo-request', 'MissedCall Demo Request', 'Triggers MissedCall SMS demo', 'missedcall', 'create_demo', 'purple', '📞', 30.00, true),
+('missedcall-demo-active', 'MissedCall Demo Active', 'Demo account is active', 'missedcall', 'mark_active', 'green', '✅', 0, true),
+('workflowswift-trial', 'WorkflowSwift Trial', 'Triggers WorkflowSwift trial', 'workflowswift', 'create_trial', 'orange', '⚡', 30.00, true),
+('workflowswift-active', 'WorkflowSwift Active', 'Trial converted to paid', 'workflowswift', 'mark_converted', 'green', '✅', 0, true),
+('hot-lead', 'Hot Lead', 'High priority lead for follow-up', 'internal', 'alert_sales', 'red', '🔥', 0, false),
+('priority-follow-up', 'Priority Follow-Up', 'Requires immediate attention', 'internal', 'create_task', 'yellow', '⚠️', 0, false),
+('demo-completed', 'Demo Completed', 'Prospect completed demo', 'internal', 'mark_qualified', 'green', '🎉', 0, false),
+('contract-sent', 'Contract Sent', 'Contract sent for signature', 'internal', 'track_contract', 'blue', '📄', 0, false),
+('closed-won', 'Closed Won', 'Deal closed successfully', 'internal', 'mark_won', 'green', '💰', 50.00, false),
+('closed-lost', 'Closed Lost', 'Deal lost', 'internal', 'mark_lost', 'gray', '❌', 0, false);
 
 -- Note: Super Admin can add more tags anytime via Settings → System Tags
 
 -- Enable RLS
 ALTER TABLE system_tags ENABLE ROW LEVEL SECURITY;
 
--- Super Admin can manage all system tags
+-- Super Admin can manage all system tags EXCEPT hardcoded ones cannot be deleted
 CREATE POLICY "Super admin can manage system tags"
   ON system_tags FOR ALL
-  USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND is_superadmin = true));
+  USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND is_superadmin = true))
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND is_superadmin = true)
+    AND (
+      -- Allow if not trying to delete a hardcoded tag
+      (SELECT is_hardcoded FROM system_tags WHERE id = id) = false
+      OR (SELECT is_hardcoded FROM system_tags WHERE id = id) IS NULL
+    )
+  );
+
+-- Prevent deletion of hardcoded tags
+CREATE POLICY "Cannot delete hardcoded system tags"
+  ON system_tags FOR DELETE
+  USING (is_hardcoded = false OR is_hardcoded IS NULL);
 
 -- Everyone can view active system tags
 CREATE POLICY "Everyone can view active system tags"
