@@ -4,6 +4,7 @@ import { Bell, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChannelStatusBar } from '@/components/layout/ChannelStatusBar';
+import Link from 'next/link';
 
 interface TopbarProps {
   title?: string;
@@ -36,13 +37,15 @@ export function Topbar({ title }: TopbarProps) {
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EF4444]" />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-[#94A3B8] hover:text-[#F1F5F9]"
-        >
-          <User className="h-5 w-5" />
-        </Button>
+        <Link href="/profile">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-[#94A3B8] hover:text-[#F1F5F9]"
+          >
+            <User className="h-5 w-5" />
+          </Button>
+        </Link>
       </div>
     </header>
   );
