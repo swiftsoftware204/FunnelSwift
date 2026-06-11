@@ -8,9 +8,11 @@ export async function POST(request: NextRequest) {
   try {
     const { contact_id, tag_name } = await request.json();
     
-    // Only trigger for ada-lead-magnet tag
-    if (tag_name !== 'ada-lead-magnet') {
-      return NextResponse.json({ skipped: true, reason: 'Not ada-lead-magnet tag' });
+    // Trigger for ANY tag containing "demo" (ada-demo, widget-demo, etc.)
+    const isDemoTag = tag_name && tag_name.toLowerCase().includes('demo');
+    
+    if (!isDemoTag) {
+      return NextResponse.json({ skipped: true, reason: 'Not a demo tag' });
     }
     
     const supabase = createClient();
@@ -43,6 +45,7 @@ export async function POST(request: NextRequest) {
         funnelswift_tracking_id: contact.funnelswift_tracking_id,
         referred_by_user_id: contact.referred_by_user_id,
       },
+      tag_name: tag_name, // Pass the tag name so ADASwift knows it's a demo
       tracking_id: contact.funnelswift_tracking_id,
       timestamp: new Date().toISOString(),
     };
