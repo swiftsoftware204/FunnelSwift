@@ -13,7 +13,9 @@ import {
   Activity,
   ArrowRight,
   Shield,
-  Server
+  Server,
+  UserPlus,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,6 +29,15 @@ interface Tenant {
   owner_email?: string;
 }
 
+interface RecentUser {
+  id: string;
+  email: string;
+  full_name?: string;
+  company?: string;
+  created_at: string;
+  is_superadmin: boolean;
+}
+
 interface Stats {
   totalTenants: number;
   activeTenants: number;
@@ -36,6 +47,7 @@ interface Stats {
 
 export default function AdminDashboard() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalTenants: 0,
     activeTenants: 0,
@@ -59,6 +71,16 @@ export default function AdminDashboard() {
 
       if (tenantsError) throw tenantsError;
       setTenants(tenantsData || []);
+
+      // Load recent users (last 10 signups)
+      const { data: usersData, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('id, email, full_name, company, created_at, is_superadmin')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (usersError) throw usersError;
+      setRecentUsers(usersData || []);
 
       // Load stats
       const { count: totalTenants } = await supabase
@@ -154,50 +176,106 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Tenants List */}
-      <Card className="bg-[#16181D] border-[#2A2D38]">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-[#F1F5F9] flex items-center gap-2">
-            <Server className="h-5 w-5 text-[#5B4FFF]" />
-            Tenants
-          </CardTitle>
-          <Link href="/admin/tenants">
-            <Button variant="outline" size="sm" className="border-[#2A2D38]">
-              View All
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {tenants.slice(0, 5).map((tenant) => (
-              <div 
-                key={tenant.id}
-                className="flex items-center justify-between p-3 bg-[#0E0F12] rounded-lg border border-[#2A2D38]"
-              >
-                <div>
-                  <p className="font-medium text-[#F1F5F9]">{tenant.name}</p>
-                  <p className="text-sm text-[#64748B]">{tenant.subdomain}.funnelswift.com</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tenants List */}
+        <Card className="bg-[#16181D] border-[#2A2D38]">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#F1F5F9] flex items-center gap-2">
+              <Server className="h-5 w-5 text-[#5B4FFF]" />
+              Recent Tenants
+            </CardTitle>
+            <Link href="/admin/tenants">
+              <Button variant="outline" size="sm" className="border-[#2A2D38]">
+                View All
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {tenants.slice(0, 5).map((tenant) => (
+                <div 
+                  key={tenant.id}
+                  className="flex items-center justify-between p-3 bg-[#0E0F12] rounded-lg border border-[#2A2D38]"
+                >
+                  <div>
+                    <p className="font-medium text-[#F1F5F9]">{tenant.name}</p>
+                    <p className="text-sm text-[#64748B]">{tenant.subdomain}.funnelswift.com</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      variant={tenant.is_active ? 'default' : 'secondary'}
+                      className={tenant.is_active ? 'bg-green-500/20 text-green-400' : 'bg-[#2A2D38] text-[#64748B]'}
+                    >
+                      {tenant.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Badge className="bg-[#5B4FFF]/20 text-[#5B4FFF]">
+                      {tenant.plan}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge 
-                    variant={tenant.is_active ? 'default' : 'secondary'}
-                    className={tenant.is_active ? 'bg-green-500/20 text-green-400' : 'bg-[#2A2D38] text-[#64748B]'}
-                  >
-                    {tenant.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                  <Badge className="bg-[#5B4FFF]/20 text-[#5B4FFF]">
-                    {tenant.plan}
-                  </Badge>
+              ))}
+              {tenants.length === 0 && (
+                <p className="text-center text-[#64748B] py-8">No tenants found</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Signups */}
+        <Card className="bg-[#16181D] border-[#2A2D38]">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#F1F5F9] flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-green-500" />
+              Recent Signups
+            </CardTitle>
+            <Link href="/admin/users">
+              <Button variant="outline" size="sm" className="border-[#2A2D38]">
+                View All
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {recentUsers.map((user) => (
+                <div 
+                  key={user.id}
+                  className="flex items-center justify-between p-3 bg-[#0E0F12] rounded-lg border border-[#2A2D38]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#5B4FFF]/20 rounded-full flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-[#5B4FFF]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#F1F5F9]">
+                        {user.full_name || user.email.split('@')[0]}
+                      </p>
+                      <p className="text-sm text-[#64748B]">{user.email}</p>
+                      {user.company && (
+                        <p className="text-xs text-[#64748B]">{user.company}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[#64748B]">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </p>
+                    {user.is_superadmin && (
+                      <Badge className="bg-[#5B4FFF]/20 text-[#5B4FFF] text-xs mt-1">
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {tenants.length === 0 && (
-              <p className="text-center text-[#64748B] py-8">No tenants found</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+              {recentUsers.length === 0 && (
+                <p className="text-center text-[#64748B] py-8">No recent signups</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
