@@ -45,21 +45,38 @@ export function Sidebar() {
 
   useEffect(() => {
     checkAdmin();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAdmin();
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   async function checkAdmin() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('user_profiles')
           .select('is_superadmin')
           .eq('id', user.id)
           .single();
-        setIsAdmin(profile?.is_superadmin || false);
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setIsAdmin(false);
+          return;
+        }
+        
+        setIsAdmin(profile?.is_superadmin === true);
+      } else {
+        setIsAdmin(false);
       }
     } catch (error) {
       console.error('Error checking admin:', error);
+      setIsAdmin(false);
     }
   }
 
