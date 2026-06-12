@@ -20,6 +20,8 @@ import {
   X,
   Rocket,
   Shield,
+  DollarSign,
+  Tag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -167,6 +169,40 @@ export function Sidebar() {
                   >
                     <Users className="h-5 w-5" />
                     Tenants
+                  </Link>
+                  <Link
+                    href="/admin/affiliates"
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        toggleSidebar();
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mt-1',
+                      pathname === '/admin/affiliates'
+                        ? 'bg-[#5B4FFF]/10 text-[#5B4FFF] border-l-2 border-[#5B4FFF]'
+                        : 'text-[#94A3B8] hover:bg-[#2A2D38] hover:text-[#F1F5F9]'
+                    )}
+                  >
+                    <DollarSign className="h-5 w-5" />
+                    Affiliates
+                  </Link>
+                  <Link
+                    href="/admin/tags"
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        toggleSidebar();
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mt-1',
+                      pathname === '/admin/tags'
+                        ? 'bg-[#5B4FFF]/10 text-[#5B4FFF] border-l-2 border-[#5B4FFF]'
+                        : 'text-[#94A3B8] hover:bg-[#2A2D38] hover:text-[#F1F5F9]'
+                    )}
+                  >
+                    <Tag className="h-5 w-5" />
+                    System Tags
                   </Link>
                 </div>
               </>
