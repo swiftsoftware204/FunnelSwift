@@ -45,19 +45,12 @@ CREATE TABLE system_tags (
 );
 
 -- Insert default system tags (HARDCODED = cannot be deleted)
+-- ONE tag per offer - simplified
 INSERT INTO system_tags (tag_name, display_name, description, target_software, target_action, color, icon, commission_amount, is_hardcoded) VALUES
-('ada-lead-magnet', 'ADA Widget Lead Magnet', 'Triggers ADA widget demo creation', 'adaswift', 'create_demo', 'blue', '🎯', 30.00, true),
-('ada-widget-sent', 'ADA Widget Delivered', 'Widget has been delivered to prospect', 'adaswift', 'mark_delivered', 'green', '✅', 0, true),
-('missedcall-demo-request', 'MissedCall Demo Request', 'Triggers MissedCall SMS demo', 'missedcall', 'create_demo', 'purple', '📞', 30.00, true),
-('missedcall-demo-active', 'MissedCall Demo Active', 'Demo account is active', 'missedcall', 'mark_active', 'green', '✅', 0, true),
-('workflowswift-trial', 'WorkflowSwift Trial', 'Triggers WorkflowSwift trial', 'workflowswift', 'create_trial', 'orange', '⚡', 30.00, true),
-('workflowswift-active', 'WorkflowSwift Active', 'Trial converted to paid', 'workflowswift', 'mark_converted', 'green', '✅', 0, true),
-('hot-lead', 'Hot Lead', 'High priority lead for follow-up', 'internal', 'alert_sales', 'red', '🔥', 0, false),
-('priority-follow-up', 'Priority Follow-Up', 'Requires immediate attention', 'internal', 'create_task', 'yellow', '⚠️', 0, false),
-('demo-completed', 'Demo Completed', 'Prospect completed demo', 'internal', 'mark_qualified', 'green', '🎉', 0, false),
-('contract-sent', 'Contract Sent', 'Contract sent for signature', 'internal', 'track_contract', 'blue', '📄', 0, false),
-('closed-won', 'Closed Won', 'Deal closed successfully', 'internal', 'mark_won', 'green', '💰', 50.00, false),
-('closed-lost', 'Closed Lost', 'Deal lost', 'internal', 'mark_lost', 'gray', '❌', 0, false);
+('ada-demo', 'ADA Demo', 'Triggers ADA widget demo creation', 'adaswift', 'create_demo', 'blue', '🎯', 30.00, true),
+('missedcall-demo', 'MissedCall Demo', 'Triggers MissedCall SMS demo', 'missedcall', 'create_demo', 'purple', '📞', 30.00, true),
+('workflowswift-demo', 'WorkflowSwift Demo', 'Triggers WorkflowSwift trial', 'workflowswift', 'create_demo', 'orange', '⚡', 30.00, true),
+('funnelswift-demo', 'FunnelSwift Demo', 'Triggers FunnelSwift demo', 'funnelswift', 'create_demo', 'green', '🚀', 30.00, true);
 
 -- Note: Super Admin can add more tags anytime via Settings → System Tags
 

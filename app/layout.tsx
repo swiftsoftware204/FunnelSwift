@@ -1,35 +1,35 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { Toaster } from '@/components/ui/sonner';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap', // Prevents FOIT
+  preload: true,
+})
 
 export const metadata: Metadata = {
-  title: 'FunnelSwift - Lead Management System',
-  description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
-  openGraph: {
-    title: 'FunnelSwift - Lead Management System',
-    description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'FunnelSwift - Lead Management System',
-    description: 'Capture, manage, and convert leads with FunnelSwift - the complete lead management platform for businesses',
-  },
-};
+  title: 'FunnelSwift',
+  description: 'Marketing automation platform',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className + ' bg-[#0E0F12] text-[#F1F5F9]'}>
-        {children}
-        <Toaster position="top-right" />
-      </body>
+    <html lang="en" className={inter.className}>
+      <head>
+        {/* Preconnect to critical domains */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://your-project.supabase.co" />
+        
+        {/* Preload critical assets */}
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+      </head>
+      <body className="antialiased">{children}</body>
     </html>
-  );
+  )
 }
