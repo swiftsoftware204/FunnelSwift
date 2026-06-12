@@ -98,6 +98,18 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+          
+          <div className="mt-6 pt-6 border-t border-[#2A2D38] text-center">
+            <p className="text-sm text-[#64748B] mb-2">Are you a Super Admin?</p>
+            <Link href="/admin-login">
+              <button
+                type="button"
+                className="w-full py-3 px-4 border border-[#5B4FFF] text-[#5B4FFF] hover:bg-[#5B4FFF]/10 font-medium rounded-lg transition-colors"
+              >
+                Admin Login
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
