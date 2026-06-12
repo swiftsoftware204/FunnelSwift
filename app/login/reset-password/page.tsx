@@ -56,9 +56,19 @@ export default function ResetPasswordPage() {
       setIsSuccess(true);
       toast.success('Password updated successfully!');
       
-      // Redirect to login after 3 seconds
+      // Check if user is admin and redirect accordingly
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('is_superadmin')
+        .single();
+      
+      // Redirect after 3 seconds
       setTimeout(() => {
-        router.push('/login');
+        if (profile?.is_superadmin) {
+          router.push('/admin-login');
+        } else {
+          router.push('/login');
+        }
       }, 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to reset password');
