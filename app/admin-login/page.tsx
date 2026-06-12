@@ -36,15 +36,30 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Step 2: Check if user is super admin
+      // Step 2: Wait for session to establish
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Step 3: Check if user is super admin
+      console.log('Checking admin status for user:', authData.user.id);
+      
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('is_superadmin')
         .eq('id', authData.user.id)
         .single();
 
-      if (profileError || !profile?.is_superadmin) {
-        // Not an admin, sign them out
+      console.log('Profile result:', profile, 'Error:', profileError);
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        await supabase.auth.signOut();
+        setError('Database error: ' + profileError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!profile?.is_superadmin) {
+        console.log('Not admin. Profile:', profile);
         await supabase.auth.signOut();
         setError('Access denied. Admin credentials required.');
         setLoading(false);
