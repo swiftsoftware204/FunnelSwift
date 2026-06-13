@@ -1,63 +1,61 @@
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import NodeCache from 'node-cache';
 import { ApiError } from './auth';
 
-// Fallback for when Redis is not configured
-const fallbackLimit = new Map<string, { count: number; resetTime: number }>();
+/**
+ * In-memory rate limiting backed by node-cache.
+ *
+ * Each identifier is tracked within a fixed window; node-cache TTL handles
+ * window expiry/cleanup automatically so there is no external dependency.
+ * Suitable for single-instance deployments. For multi-instance horizontal
+ * scaling, back this with a shared store (e.g. Upstash Redis).
+ */
 
-let ratelimit: Ratelimit | null = null;
-let publicRatelimit: Ratelimit | null = null;
+const WINDOW_SECONDS = 60;
+const AUTHENTICATED_LIMIT = 100;
+const PUBLIC_LIMIT = 20;
 
-try {
-  const redis = Redis.fromEnv();
-  
-  ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(100, '1 m'),
-  });
+interface WindowRecord {
+  count: number;
+  reset: number; // epoch ms when the current window resets
+}
 
-  publicRatelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(20, '1 m'),
-  });
-} catch {
-  console.warn('Redis not configured, using in-memory rate limiting');
+const cache = new NodeCache({ stdTTL: WINDOW_SECONDS, checkperiod: WINDOW_SECONDS });
+
+export interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+}
+
+export function checkRateLimit(identifier: string, isPublic = false): RateLimitResult {
+  const limit = isPublic ? PUBLIC_LIMIT : AUTHENTICATED_LIMIT;
+  const key = `${isPublic ? 'pub' : 'api'}:${identifier}`;
+  const now = Date.now();
+
+  const existing = cache.get<WindowRecord>(key);
+
+  if (!existing) {
+    const reset = now + WINDOW_SECONDS * 1000;
+    cache.set<WindowRecord>(key, { count: 1, reset });
+    return { success: true, limit, remaining: limit - 1, reset };
+  }
+
+  if (existing.count >= limit) {
+    return { success: false, limit, remaining: 0, reset: existing.reset };
+  }
+
+  existing.count += 1;
+  const expiresAt = cache.getTtl(key);
+  const remainingTtl = expiresAt ? Math.max(1, Math.ceil((expiresAt - now) / 1000)) : WINDOW_SECONDS;
+  cache.set<WindowRecord>(key, existing, remainingTtl);
+
+  return { success: true, limit, remaining: limit - existing.count, reset: existing.reset };
 }
 
 export async function rateLimit(identifier: string, isPublic = false): Promise<void> {
-  // Use Redis if available
-  if (ratelimit && publicRatelimit) {
-    const limiter = isPublic ? publicRatelimit : ratelimit;
-    const { success } = await limiter.limit(identifier);
-    if (!success) throw new ApiError(429, 'Too many requests');
-    return;
-  }
-  
-  // Fallback to in-memory rate limiting
-  const limit = isPublic ? 20 : 100;
-  const windowMs = 60 * 1000; // 1 minute
-  const now = Date.now();
-  
-  const record = fallbackLimit.get(identifier);
-  
-  if (!record || now > record.resetTime) {
-    fallbackLimit.set(identifier, { count: 1, resetTime: now + windowMs });
-    return;
-  }
-  
-  if (record.count >= limit) {
+  const result = checkRateLimit(identifier, isPublic);
+  if (!result.success) {
     throw new ApiError(429, 'Too many requests');
   }
-  
-  record.count++;
 }
-
-// Cleanup old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of fallbackLimit.entries()) {
-    if (now > record.resetTime) {
-      fallbackLimit.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
