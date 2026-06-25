@@ -1,0 +1,92 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+      
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Build release
+      run: cargo build --release
+      
+    - name: Run tests
+      run: cargo test --release
+      
+    - name: Build Docker image
+      run: docker build -t funnelswift-rust:latest .
+      
+    - name: Save Docker image
+      run: docker save funnelswift-rust:latest | gzip > funnelswift-rust.tar.gz
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-image
+        path: funnelswift-rust.tar.gz
+        
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+        
+    - name: Deploy to VPS
+      env:
+        VPS_HOST: ${{ secrets.VPS_HOST }}
+        VPS_USER: ${{ secrets.VPS_USER }}
+        VPS_KEY: ${{ secrets.VPS_KEY }}
+      run: |
+        echo "$VPS_KEY" > vps_key.pem
+        chmod 600 vps_key.pem
+        
+        # Copy image to VPS
+        scp -i vps_key.pem -o StrictHostKeyChecking=no \
+          funnelswift-rust.tar.gz \
+          $VPS_USER@$VPS_HOST:/opt/funnelswift/
+        
+        # Deploy on VPS
+        ssh -i vps_key.pem -o StrictHostKeyChecking=no \
+          $VPS_USER@$VPS_HOST << 'EOF'
+          cd /opt/funnelswift
+          docker load < funnelswift-rust.tar.gz
+          docker-compose up -d funnelswift
+          docker system prune -f
+        EOF
+        
+        rm -f vps_key.pem
