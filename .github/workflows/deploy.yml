@@ -1,36 +1,29 @@
-name: Build and Deploy
+name: Deploy to VPS
 
 on:
   push:
-    branches: [ main ]
-
-env:
-  CARGO_TERM_COLOR: always
-  VPS_HOST: 178.156.221.18
-  VPS_USER: root
+    branches: [ main, master ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     
-    - name: Install Rust
-      uses: dtolnay/rust-action@stable
-      
-    - name: Build release
-      run: cargo build --release
-      
-    - name: Deploy to VPS
+    - name: Deploy to Hetzner VPS
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ env.VPS_HOST }}
-        username: ${{ env.VPS_USER }}
+        host: 178.156.221.18
+        username: root
         key: ${{ secrets.VPS_SSH_KEY }}
         script: |
-          cd /opt/swift
+          cd /opt/swift/funnelswift-rust
           git pull origin main
-          docker-compose build funnelswift
-          docker-compose up -d funnelswift
-          docker system prune -f
+          docker-compose up -d --build funnelswift
+          
+    - name: Update Cloudflare DNS
+      run: |
+        curl -X PUT "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records/${{ secrets.CF_DNS_RECORD_ID }}" \
+          -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"type":"A","name":"app.funnelswift.net","content":"178.156.221.18","ttl":120,"proxied":true}'
