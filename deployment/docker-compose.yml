@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: swift-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swift}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SwiftSecure2026!}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-swift}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: swift-redis
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+
+  funnelswift:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    container_name: funnelswift-api
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-swift}:${POSTGRES_PASSWORD:-SwiftSecure2026!}@postgres:5432/funnelswift
+      - REDIS_URL=redis://redis:6379
+      - SUPABASE_URL=${FUNNELSWIFT_SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${FUNNELSWIFT_SUPABASE_ANON_KEY}
+      - PORT=${FUNNELSWIFT_PORT:-8080}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  crmswift:
+    build:
+      context: ../../crmswift-source
+      dockerfile: Dockerfile
+    container_name: crmswift-api
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=${CRM_PORT:-8081}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-swift}:${POSTGRES_PASSWORD:-SwiftSecure2026!}@postgres:5432/crmswift
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${CRM_JWT_SECRET:-CoreSwiftSecure2026!}
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: swift-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - funnelswift
+      - crmswift
+    restart: unless-stopped
